@@ -1,4 +1,8 @@
+{% if activity is not none %}
 ESGF {{project}} data holdings for activity {{activity}} as of {{timestamp}}
+{% else %}
+ESGF {{project}} data holdings as of {{timestamp}}
+{%endif %}
 <br><br>
 The cells are shaded by how recently their latest datasets were published.
 <br><br>
@@ -10,7 +14,11 @@ The cells are shaded by how recently their latest datasets were published.
     </tr>
 </table>
 <br>
+{% if activity is not none %}
 Number of 'datasets' [variables x (# of simulations)] from each model in support of each {{project}} {{activity}} experiment.
+{% else %}
+Number of 'datasets' [variables x (# of simulations)] from each model in support of each {{project}} experiment.
+{%endif %}
 <br><br>
 <div style="overflow-x:auto;">
 <table border="1" cellspacing="2" cellpadding="4">
@@ -50,7 +58,11 @@ Number of 'datasets' [variables x (# of simulations)] from each model in support
 </table>
 </div>
 <br><br>
+{% if activity is not none %}
 Number of simulations [# of simulations] from each model in support of each {{project}} {{activity}} experiment.
+{% else %}
+Number of simulations [# of simulations] from each model in support of each {{project}} experiment.
+{%endif %}
 <br><br>
 <div style="overflow-x:auto;">
 <table border="1" cellspacing="2" cellpadding="4">
@@ -75,7 +87,11 @@ Number of simulations [# of simulations] from each model in support of each {{pr
 </table>
 </div>
 <br><br>
+{% if activity is not none %}
 Number of variables from each model in support of each {{project}} {{activity}} experiment.
+{% else %}
+Number of variables from each model in support of each {{project}} experiment.
+{%endif %}
 <br><br>
 <div style="overflow-x:auto;">
 <table border="1" cellspacing="2" cellpadding="4">
@@ -100,7 +116,11 @@ Number of variables from each model in support of each {{project}} {{activity}} 
 </table>
 </div>
 <br><br>
+{% if activity is not none %}
 Number of models providing output at each sampling frequency in support of each {{project}} {{activity}} experiment.
+{% else %}
+Number of models providing output at each sampling frequency in support of each {{project}} experiment.
+{%endif %}
 <br><br>
 <div style="overflow-x:auto;">
 <table border="1" cellspacing="2" cellpadding="4">

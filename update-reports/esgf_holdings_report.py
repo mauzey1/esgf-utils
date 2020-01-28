@@ -162,57 +162,85 @@ def gen_tables(project, output_dir):
 
 	timestamp = datetime.datetime.now().strftime("%A %d %B %Y %H:%M:%S")
 
-	holdings_loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'esgf_holdings_template.html'))
-	holdings_env = jinja2.Environment(loader=holdings_loader)
-	holdings_template = holdings_env.get_template('')
+	if project is 'CMIP6':
+		holdings_loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'esgf_holdings_template.html'))
+		holdings_env = jinja2.Environment(loader=holdings_loader)
+		holdings_template = holdings_env.get_template('')
 
-	# Create a page with ESGF holdings for all activities of this project
-	source_id_list, activity_id_list, activity_holdings = get_latest_data_holdings(project, 'source_id', 'activity_id')
-	_source_id_list, _activity_id_list, exp_sim_counts = get_exp_sim_stats(project, 'source_id', 'activity_id')
-	_source_id_list, _activity_id_list, variable_counts = get_facet_value_count(project, 'source_id', 'activity_id', 'variable_id')
-	frequency_list, _activity_id_list, model_counts = get_facet_value_count(project, 'frequency', 'activity_id', 'source_id')
-	html = holdings_template.render(project=project,
-									timestamp=timestamp,
-									models=source_id_list, 
-									activities=activity_id_list, 
-									frequencies=frequency_list,
-									activity_holdings=activity_holdings,
-									exp_sim_counts=exp_sim_counts,
-									variable_counts=variable_counts,
-									models_per_frequency=model_counts)
-
-	filepath = os.path.join(output_dir, project+'_esgf_holdings.html')
-	with open(filepath,'w') as f:
-		print(html, file=f)
-
-	# Create pages with ESGF holdings for each activity of this project
-	# Display only data for the given list of experiments
-
-	activities_loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'esgf_activities_template.html'))
-	activities_env = jinja2.Environment(loader=activities_loader)
-	activities_template = activities_env.get_template('')
-
-	for activity_id in activity_id_list:
-		source_id_list, experiment_id_list, experiment_holdings = get_latest_data_holdings(project, 'source_id', 'experiment_id', 
-																	activity_id=activity_id)
-		_source_id_list, _experiment_id_list, simulation_counts = get_facet_value_count(project, 'source_id', 'experiment_id', 'variant_label',
-																	activity_id=activity_id)
-		_source_id_list, _experiment_id_list, variable_counts = get_facet_value_count(project, 'source_id', 'experiment_id', 'variable_id', 
-																	activity_id=activity_id)
-		frequency_list, _experiment_id_list, model_counts = get_facet_value_count(project, 'frequency', 'experiment_id', 'source_id', 
-																	activity_id=activity_id)
-		html = activities_template.render(project=project,
-										activity=activity_id,
+		# Create a page with ESGF holdings for all activities of this project
+		source_id_list, activity_id_list, activity_holdings = get_latest_data_holdings(project, 'source_id', 'activity_id')
+		_source_id_list, _activity_id_list, exp_sim_counts = get_exp_sim_stats(project, 'source_id', 'activity_id')
+		_source_id_list, _activity_id_list, variable_counts = get_facet_value_count(project, 'source_id', 'activity_id', 'variable_id')
+		frequency_list, _activity_id_list, model_counts = get_facet_value_count(project, 'frequency', 'activity_id', 'source_id')
+		html = holdings_template.render(project=project,
 										timestamp=timestamp,
 										models=source_id_list, 
-										experiments=experiment_id_list, 
+										activities=activity_id_list, 
+										frequencies=frequency_list,
+										activity_holdings=activity_holdings,
+										exp_sim_counts=exp_sim_counts,
+										variable_counts=variable_counts,
+										models_per_frequency=model_counts)
+
+		filepath = os.path.join(output_dir, project+'_esgf_holdings.html')
+		with open(filepath,'w') as f:
+			print(html, file=f)
+
+		# Create pages with ESGF holdings for each activity of this project
+		# Display only data for the given list of experiments
+
+		activities_loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'esgf_activities_template.html'))
+		activities_env = jinja2.Environment(loader=activities_loader)
+		activities_template = activities_env.get_template('')
+
+		for activity_id in activity_id_list:
+			source_id_list, experiment_id_list, experiment_holdings = get_latest_data_holdings(project, 'source_id', 'experiment_id', 
+																		activity_id=activity_id)
+			_source_id_list, _experiment_id_list, simulation_counts = get_facet_value_count(project, 'source_id', 'experiment_id', 'variant_label',
+																		activity_id=activity_id)
+			_source_id_list, _experiment_id_list, variable_counts = get_facet_value_count(project, 'source_id', 'experiment_id', 'variable_id', 
+																		activity_id=activity_id)
+			frequency_list, _experiment_id_list, model_counts = get_facet_value_count(project, 'frequency', 'experiment_id', 'source_id', 
+																		activity_id=activity_id)
+			html = activities_template.render(project=project,
+											activity=activity_id,
+											timestamp=timestamp,
+											models=source_id_list, 
+											experiments=experiment_id_list, 
+											frequencies=frequency_list,
+											experiment_holdings=experiment_holdings,
+											simulation_counts=simulation_counts,
+											variable_counts=variable_counts,
+											models_per_frequency=model_counts)
+
+			activities_dir = os.path.join(output_dir, activity_id)
+			if not os.path.isdir(activities_dir):
+				os.mkdir(activities_dir)
+
+			filepath = os.path.join(activities_dir, 'index.html')
+			with open(filepath,'w') as f:
+				print(html, file=f)
+	elif project in ['CMIP5', 'CMIP3']:
+		activities_loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'esgf_activities_template.html'))
+		activities_env = jinja2.Environment(loader=activities_loader)
+		activities_template = activities_env.get_template('')
+
+		model_list, experiment_list, experiment_holdings = get_latest_data_holdings(project, 'model', 'experiment')
+		_model_list, _experiment_list, simulation_counts = get_facet_value_count(project, 'model', 'experiment', 'ensemble')
+		_model_list, _experiment_list, variable_counts = get_facet_value_count(project, 'model', 'experiment', 'variable')
+		frequency_list, _experiment_list, model_counts = get_facet_value_count(project, 'time_frequency', 'experiment', 'model')
+		html = activities_template.render(project=project,
+										activity=None,
+										timestamp=timestamp,
+										models=model_list, 
+										experiments=experiment_list, 
 										frequencies=frequency_list,
 										experiment_holdings=experiment_holdings,
 										simulation_counts=simulation_counts,
 										variable_counts=variable_counts,
 										models_per_frequency=model_counts)
 
-		activities_dir = os.path.join(output_dir, activity_id)
+		activities_dir = os.path.join(output_dir, project)
 		if not os.path.isdir(activities_dir):
 			os.mkdir(activities_dir)
 
