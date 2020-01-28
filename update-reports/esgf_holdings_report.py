@@ -162,7 +162,7 @@ def gen_tables(project, output_dir):
 
 	timestamp = datetime.datetime.now().strftime("%A %d %B %Y %H:%M:%S")
 
-	if project is 'CMIP6':
+	if project == 'CMIP6':
 		holdings_loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__),'esgf_holdings_template.html'))
 		holdings_env = jinja2.Environment(loader=holdings_loader)
 		holdings_template = holdings_env.get_template('')
