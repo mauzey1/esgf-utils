@@ -14,11 +14,15 @@ def get_solr_query_url():
 
     req = requests.get(search_url)
     js = json.loads(req.text)
-    shards = js['responseHeader']['params']['shards']
+
+    if 'shards' in js['responseHeader']['params']:
+        shards = 'shards={}&'.format(js['responseHeader']['params']['shards'])
+    else:
+    	shards = ''
 
     solr_url = 'https://esgf-node.llnl.gov/solr/datasets/select' \
                '?q=*:*&wt=json&facet=true&fq=type:Dataset' \
-               '&fq=replica:false&fq=latest:true&shards={shards}&{{query}}'
+               '&fq=replica:false&fq=latest:true&{shards}{{query}}'
     
     return solr_url.format(shards=shards)
 
