@@ -35,8 +35,7 @@ def get_input4mips_stats():
     field4 = 'source_id'
     target_mip_list_pivot = ','.join([field1,field2,field3,field4,'target_mip_list'])   
     dataset_category_pivot = ','.join([field1,field2,field3,field4,'dataset_category'])                
-    source_version_pivot = ','.join([field1,field2,field3,field4,'source_version'])                    
-    dataset_status_pivot = ','.join(['master_id','dataset_status'])                                                         
+    source_version_pivot = ','.join([field1,field2,field3,field4,'source_version'])                                                         
 
     solr_url = get_solr_query_url()
 
@@ -67,23 +66,41 @@ def get_input4mips_stats():
         
         return build_dict(facet_dict)
 
+    def get_dataset_status():                     
+        _pivot = ','.join(['instance_id','dataset_status'])
+        query = 'rows=0&fq=activity_id:{activity_id}' \
+                '&facet.pivot={pivot}'                              
+
+        query_url = solr_url.format(query=query.format(activity_id=activity_id,pivot=_pivot))                                
+        req = requests.get(query_url) 
+        js = json.loads(req.text)
+
+        facets = js['facet_counts']['facet_pivot'][_pivot]
+        facet_dict = {'field':'activity_id','value':activity_id,'pivot':facets}
+    
+        id_status_dict = {}
+        for f in facets:
+            if 'pivot' in f:
+                id_status_dict[f['value']] = f['pivot'][0]['value']
+            else:
+                id_status_dict[f['value']] = 'None'
+
+        return id_status_dict
+
     target_mip_list_dict = query_solr(target_mip_list_pivot)
     dataset_category_dict = query_solr(dataset_category_pivot)
     source_version_dict = query_solr(source_version_pivot)
 
-    dataset_status_dict = query_solr(dataset_status_pivot)
+    dataset_status_dict = get_dataset_status()
 
-    # organize master_id's by mip_era, target_mip, institution_id, and source_id
+    # organize instance_id's by mip_era, target_mip, institution_id, and source_id
     id_status = {}
-    for master_id, status in dataset_status_dict.items():
-        id_list = master_id.split('.')
+    for instance_id, status in dataset_status_dict.items():
+        id_list = instance_id.split('.')
         key = '.'.join(id_list[:5])
         if key not in id_status:
             id_status[key] = {}
-        if 'dataset_status' in status:
-            id_status[key][master_id] = status['dataset_status']
-        else:
-            id_status[key][master_id] = None
+        id_status[key][instance_id] = status
 
     data_dict = {}
     for mip_era,v1 in target_mip_list_dict.items():
@@ -93,12 +110,12 @@ def get_input4mips_stats():
                     did = '.'.join([activity_id, mip_era, target_mip, inst_id, src_id])
                     print(did)
                     doi_dict = get_doi(activity_id, mip_era, target_mip, inst_id, src_id)
-                    doi=doi_dict['id']
-                    title=doi_dict['title']
+                    doi = doi_dict['id']
+                    title = doi_dict['title']
                     target_mip_list = v4['target_mip_list']
                     dataset_category = dataset_category_dict[mip_era][target_mip][inst_id][src_id]['dataset_category']
-                    id_dict = id_status[did]
                     source_version = source_version_dict[mip_era][target_mip][inst_id][src_id]['source_version']
+                    id_dict = id_status[did]
                     data_dict[did] = dict(institution_id=inst_id,
                                           source_id=src_id,
                                           mip_table=target_mip_list,
