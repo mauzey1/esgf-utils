@@ -30,7 +30,7 @@ def get_doi(activity_id, mip_era, target_mip_list, institution_id, source_id):
 def get_input4mips_stats():
     activity_id = 'input4MIPs'      
     field1 = 'mip_era'
-    field2 = 'target_mip'                                                                          
+    field2 = 'target_mip_list'                                                                          
     field3 = 'institution_id'                                                                                 
     field4 = 'source_id'
     target_mip_list_pivot = ','.join([field1,field2,field3,field4,'target_mip_list'])   
@@ -108,23 +108,24 @@ def get_input4mips_stats():
             for inst_id,v3 in v2.items():
                 for src_id,v4 in v3.items():
                     did = '.'.join([activity_id, mip_era, target_mip, inst_id, src_id])
-                    print(did)
-                    doi_dict = get_doi(activity_id, mip_era, target_mip, inst_id, src_id)
-                    doi = doi_dict['id']
-                    title = doi_dict['title']
-                    target_mip_list = v4['target_mip_list']
-                    dataset_category = dataset_category_dict[mip_era][target_mip][inst_id][src_id]['dataset_category']
-                    source_version = source_version_dict[mip_era][target_mip][inst_id][src_id]['source_version']
-                    id_dict = id_status[did]
-                    data_dict[did] = dict(institutionId=inst_id,
-                                          sourceId=src_id,
-                                          mipTable=target_mip_list,
-                                          datatype=dataset_category,
-                                          version=source_version,
-                                          id=id_dict,
-                                          doi=doi,
-                                          title=title
-                                         )
+                    if did in id_status:
+                        print(did)
+                        doi_dict = get_doi(activity_id, mip_era, target_mip, inst_id, src_id)
+                        doi = doi_dict['id']
+                        title = doi_dict['title']
+                        target_mip_list = v4['target_mip_list']
+                        dataset_category = dataset_category_dict[mip_era][target_mip][inst_id][src_id]['dataset_category']
+                        source_version = source_version_dict[mip_era][target_mip][inst_id][src_id]['source_version']
+                        id_dict = id_status[did]
+                        data_dict[did] = dict(institutionId=inst_id,
+                                            sourceId=src_id,
+                                            mipTable=target_mip_list,
+                                            datatype=dataset_category,
+                                            version=source_version,
+                                            id=id_dict,
+                                            doi=doi,
+                                            title=title
+                                            )
 
     with open('input4MIPS_report.json', 'w') as outfile:
         json.dump(dict(data=data_dict), outfile, indent=4)
