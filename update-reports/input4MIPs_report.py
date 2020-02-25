@@ -109,7 +109,6 @@ def get_input4mips_stats():
                 for src_id,v4 in v3.items():
                     did = '.'.join([activity_id, mip_era, target_mip, inst_id, src_id])
                     if did in id_status:
-                        print(did)
                         doi_dict = get_doi(activity_id, mip_era, target_mip, inst_id, src_id)
                         doi = doi_dict['id']
                         title = doi_dict['title']
@@ -127,7 +126,7 @@ def get_input4mips_stats():
                                             title=title
                                             )
 
-    with open('input4MIPS_report.json', 'w') as outfile:
+    with open('input4MIPs_report.json', 'w') as outfile:
         json.dump(dict(data=data_dict), outfile, indent=4)
 
 if __name__ == '__main__':
