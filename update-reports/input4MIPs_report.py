@@ -67,7 +67,7 @@ def get_input4mips_stats():
         return build_dict(facet_dict)
 
     def get_dataset_status():                     
-        _pivot = ','.join(['instance_id','latest'])
+        _pivot = ','.join(['instance_id','dataset_status'])
         query = 'rows=0&fq=activity_id:{activity_id}' \
                 '&facet.pivot={pivot}'                              
 
@@ -100,7 +100,7 @@ def get_input4mips_stats():
         key = '.'.join(id_list[:5])
         if key not in id_status:
             id_status[key] = {}
-        id_status[key][instance_id] = 'latest' if status else 'deprecated'
+        id_status[key][instance_id] = status
 
     data_dict = {}
     for mip_era,v1 in target_mip_list_dict.items():
