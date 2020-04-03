@@ -1,12 +1,12 @@
 import requests
 import os
+import csv
 import json
 import datetime
 import argparse
 import collections
 import numpy
 import matplotlib.pyplot as plt
-from dateutil.relativedelta import relativedelta
 
 
 def get_solr_query_url():
@@ -40,7 +40,7 @@ def get_dataset_time_data(project, start_date, end_date, activity_id=None, cumul
 				'&facet.range.gap=%2B1DAY'
 		query_url = solr_url.format(query=query.format(project=project, 
 													start_date=start_str, 
-													end_date=start_str))
+													end_date=end_str))
 	else:
 		query = 'rows=0&fq=project:{project}' \
 				'&fq=activity_id:{activity_id}' \
@@ -51,7 +51,7 @@ def get_dataset_time_data(project, start_date, end_date, activity_id=None, cumul
 		query_url = solr_url.format(query=query.format(project=project, 
 													activity_id=activity_id, 
 													start_date=start_str, 
-													end_date=start_str))
+													end_date=end_str))
 	req = requests.get(query_url)
 	js = json.loads(req.text)
 
@@ -67,20 +67,64 @@ def get_dataset_time_data(project, start_date, end_date, activity_id=None, cumul
 	return (datetimes, counts)
 
 
-def gen_plot(project, start_date, end_date, activity_id=None, cumulative=False, output_dir=None):
+def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=None, cumulative=False, output_dir=None):
 
 	start_str = start_date.strftime("%Y%m%d")
 	end_str = end_date.strftime("%Y%m%d")
 	
 	# store data in CSV files
-	print("start = %s, end = %s"%(start_str, end_str))
+	print("Getting ESGF data from {} to {}".format(start_str,end_str))
 	datetimes, counts = get_dataset_time_data(project=project, 
 											  start_date=start_date, 
 											  end_date=end_date, 
 											  activity_id=activity_id, 
 											  cumulative=cumulative)
 
+	if cumulative:
+		filename = "esgf_dataset_publication_cumulative_counts_{}".format(project)
+	else:
+		filename = "esgf_dataset_publication_counts_{}".format(project)
+	if activity_id:
+		filename += "_{}".format(activity_id)
+	filename += "_{}-{}.csv".format(start_str, end_str)
+
+	filename = os.path.join(output_dir, filename)
+
+	csv_filename = filename+".csv"
+	print("Writing data to {}".format(csv_filename))
+	with open(csv_filename, 'w') as csv_file:
+		fieldnames = ['date', 'count']
+		writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+		writer.writeheader()
+		for d,c in zip(datetimes, counts):
+			writer.writerow({'date': d, 'count': c})
+
 	# plot data
+	plot_filename = filename+".png"
+	print("Saving plot to {}".format(plot_filename))
+
+	fig, ax = plt.subplots(figsize=(10,5))
+	ax.plot(datetimes, counts)
+
+
+	ylim_min = ymin if ymin else numpy.min(counts)
+	ylim_max = ymax if ymax else numpy.max(counts)
+	ax.set(xlim=(start_date, end_date), ylim=(ylim_min, ylim_max))
+
+	if activity_id:
+		title = "{} {} ".format(project,activity_id)
+	else:
+		title = "{} ".format(project)
+	if cumulative:
+		title += "cumulative count on ESGF"
+	else:
+		title += "count on ESGF"
+
+	ax.set(xlabel='date', ylabel='count', title=title)
+	ax.grid()
+
+	fig.savefig(plot_filename)
 
 
 def main():
@@ -91,7 +135,9 @@ def main():
 	parser.add_argument("--start_date", "-sd", dest="start_date", type=str, default=None, help="Start date in YYYY-MM-DD format (default is None)")
 	parser.add_argument("--end_date", "-ed", dest="end_date", type=str, default=None, help="End date in YYYY-MM-DD format (default is None)")
 	parser.add_argument("--output", "-o", dest="output", type=str, default=os.path.curdir, help="Output directory (default is current directory)")
-	parser.add_argument("--cumulative", "-cs", dest="cumulative", action='store_true', help="Use cumulative (default is False)")
+	parser.add_argument("--ymax", dest="ymax", type=int, default=None, help="Maximum of y-axis for count plot (default is None)")
+	parser.add_argument("--ymin", dest="ymin", type=int, default=None, help="Minimum of y-axis for count plot (default is None)")
+	parser.add_argument("--cumulative", dest="cumulative", action='store_true', help="Get cumulative count of datasets over time (default is False)")
 	parser.set_defaults(cumulative=False)
 	args = parser.parse_args()
 
@@ -119,7 +165,7 @@ def main():
 		print("{} is not a directory. Exiting.".format(args.output))
 		return
 	
-	gen_plot(args.project, start_date, end_date, args.activity_id, args.cumulative, args.output)
+	gen_plot(args.project, start_date, end_date, args.ymin, args.ymax, args.activity_id, args.cumulative, args.output)
 
 
 if __name__ == '__main__':
