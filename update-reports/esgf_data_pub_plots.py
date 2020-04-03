@@ -86,7 +86,7 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 		filename = "esgf_dataset_publication_counts_{}".format(project)
 	if activity_id:
 		filename += "_{}".format(activity_id)
-	filename += "_{}-{}.csv".format(start_str, end_str)
+	filename += "_{}-{}".format(start_str, end_str)
 
 	filename = os.path.join(output_dir, filename)
 
