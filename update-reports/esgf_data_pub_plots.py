@@ -24,7 +24,7 @@ def get_solr_query_url():
     return solr_url.format(shards=shards)
 
 
-def get_dataset_time_data(project, start_date, end_date, activity_id=None, cumulative=False):
+def get_dataset_time_data(project, start_date, end_date, activity_id=None, experiment_id=None, cumulative=False):
 
 	date_format = '%Y-%m-%dT%H:%M:%SZ'
 	start_str = start_date.strftime(date_format)
@@ -32,26 +32,21 @@ def get_dataset_time_data(project, start_date, end_date, activity_id=None, cumul
 
 	solr_url = get_solr_query_url()
 
-	if activity_id is None:
-		query = 'rows=0&fq=project:{project}' \
-				'&facet.range=_timestamp' \
-				'&facet.range.start={start_date}' \
-				'&facet.range.end={end_date}' \
-				'&facet.range.gap=%2B1DAY'
-		query_url = solr_url.format(query=query.format(project=project, 
-													start_date=start_str, 
-													end_date=end_str))
-	else:
-		query = 'rows=0&fq=project:{project}' \
-				'&fq=activity_id:{activity_id}' \
-				'&facet.range=_timestamp' \
-				'&facet.range.start={start_date}' \
-				'&facet.range.end={end_date}' \
-				'&facet.range.gap=%2B1DAY'
-		query_url = solr_url.format(query=query.format(project=project, 
-													activity_id=activity_id, 
-													start_date=start_str, 
-													end_date=end_str))
+	query = 'rows=0&fq=project:{project}' \
+			'&facet.range=_timestamp' \
+			'&facet.range.start={start_date}' \
+			'&facet.range.end={end_date}' \
+			'&facet.range.gap=%2B1DAY'
+	if activity_id:
+		query += '&fq=activity_id:{activity_id}'
+	if experiment_id:
+		query += '&fq=experiment_id:{experiment_id}'
+	query_url = solr_url.format(query=query.format(project=project, 
+												   start_date=start_str, 
+												   end_date=end_str, 
+												   activity_id=activity_id, 
+												   experiment_id=experiment_id))
+
 	req = requests.get(query_url)
 	js = json.loads(req.text)
 
@@ -67,7 +62,7 @@ def get_dataset_time_data(project, start_date, end_date, activity_id=None, cumul
 	return (datetimes, counts)
 
 
-def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=None, cumulative=False, output_dir=None):
+def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=None, experiment_id=None, cumulative=False, output_dir=None):
 
 	start_str = start_date.strftime("%Y%m%d")
 	end_str = end_date.strftime("%Y%m%d")
@@ -78,6 +73,7 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 											  start_date=start_date, 
 											  end_date=end_date, 
 											  activity_id=activity_id, 
+											  experiment_id=experiment_id, 
 											  cumulative=cumulative)
 
 	if cumulative:
@@ -86,6 +82,8 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 		filename = "esgf_dataset_publication_counts_{}".format(project)
 	if activity_id:
 		filename += "_{}".format(activity_id)
+	if experiment_id:
+		filename += "_{}".format(experiment_id)
 	filename += "_{}-{}".format(start_str, end_str)
 
 	filename = os.path.join(output_dir, filename)
@@ -112,10 +110,11 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 	ylim_max = ymax if ymax else numpy.max(counts)
 	ax.set(xlim=(start_date, end_date), ylim=(ylim_min, ylim_max))
 
+	title = "{} ".format(project)
 	if activity_id:
-		title = "{} {} ".format(project,activity_id)
-	else:
-		title = "{} ".format(project)
+		title += "{} ".format(activity_id)
+	if experiment_id:
+		title += "{} ".format(experiment_id)
 	if cumulative:
 		title += "cumulative count on ESGF"
 	else:
@@ -132,6 +131,7 @@ def main():
 	parser = argparse.ArgumentParser(description="Create HTML tables for the data holdings of ESGF")
 	parser.add_argument("--project", "-p", dest="project", type=str, default="CMIP6", help="MIP project name (default is CMIP6)")
 	parser.add_argument("--activity_id", "-ai", dest="activity_id", type=str, default=None, help="MIP activity id (default is None)")
+	parser.add_argument("--experiment_id", "-ei", dest="experiment_id", type=str, default=None, help="MIP experiment id (default is None)")
 	parser.add_argument("--start_date", "-sd", dest="start_date", type=str, default=None, help="Start date in YYYY-MM-DD format (default is None)")
 	parser.add_argument("--end_date", "-ed", dest="end_date", type=str, default=None, help="End date in YYYY-MM-DD format (default is None)")
 	parser.add_argument("--output", "-o", dest="output", type=str, default=os.path.curdir, help="Output directory (default is current directory)")
@@ -165,7 +165,7 @@ def main():
 		print("{} is not a directory. Exiting.".format(args.output))
 		return
 	
-	gen_plot(args.project, start_date, end_date, args.ymin, args.ymax, args.activity_id, args.cumulative, args.output)
+	gen_plot(args.project, start_date, end_date, args.ymin, args.ymax, args.activity_id, args.experiment_id, args.cumulative, args.output)
 
 
 if __name__ == '__main__':
