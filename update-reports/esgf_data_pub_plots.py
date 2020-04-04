@@ -128,7 +128,7 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 
 def main():
 
-	parser = argparse.ArgumentParser(description="Create HTML tables for the data holdings of ESGF")
+	parser = argparse.ArgumentParser(description="Gather dataset counts per day from ESGF")
 	parser.add_argument("--project", "-p", dest="project", type=str, default="CMIP6", help="MIP project name (default is CMIP6)")
 	parser.add_argument("--activity_id", "-ai", dest="activity_id", type=str, default=None, help="MIP activity id (default is None)")
 	parser.add_argument("--experiment_id", "-ei", dest="experiment_id", type=str, default=None, help="MIP experiment id (default is None)")
