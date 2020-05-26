@@ -1,13 +1,15 @@
+import os
 import json
 import argparse
-import requests
+import urllib.request
+
 
 def get_solr_query_url(): 
     search_url = 'https://esgf-node.llnl.gov/esg-search/search/' \
                  '?limit=0&format=application%2Fsolr%2Bjson' 
 
-    req = requests.get(search_url) 
-    js = json.loads(req.text) 
+    with urllib.request.urlopen(search_url) as url:
+        js = json.loads(url.read().decode('UTF-8'))
     shards = js['responseHeader']['params']['shards'] 
 
     solr_url = 'https://esgf-node.llnl.gov/solr/datasets/select' \
@@ -16,18 +18,22 @@ def get_solr_query_url():
 
     return solr_url.format(shards=shards)
 
-def get_doi(activity_id, mip_era, target_mip_list, institution_id, source_id):
+def get_doi(activity_id, mip_era, target_mip_list, institution_id, source_id, cafile=None):
     json_url = 'https://cera-www.dkrz.de/WDCC/ui/' \
                'cerasearch/cerarest/exportcmip6?input={query}&wt=json'
 
     query = '.'.join([activity_id, mip_era, target_mip_list, institution_id, source_id])
 
-    req = requests.get(json_url.format(query=query), verify='/etc/ssl/certs/ca-bundle.crt') 
-    js = json.loads(req.text)
+    if cafile is not None:
+        with urllib.request.urlopen(json_url.format(query=query), cafile=cafile) as url:
+            js = json.loads(url.read().decode('UTF-8'))
+    else:
+        with urllib.request.urlopen(json_url.format(query=query)) as url:
+            js = json.loads(url.read().decode('UTF-8'))
 
     return dict(id=js['identifier']['id'],title=js['titles'][0])
 
-def get_input4mips_stats():
+def get_input4mips_stats(output_dir, cafile):
     activity_id = 'input4MIPs'      
     field1 = 'mip_era'
     field2 = 'target_mip_list'                                                                          
@@ -43,9 +49,9 @@ def get_input4mips_stats():
         query = 'rows=0&fq=activity_id:{activity_id}' \
                 '&facet.pivot={pivot}'                              
 
-        query_url = solr_url.format(query=query.format(activity_id=activity_id,pivot=_pivot))                                
-        req = requests.get(query_url) 
-        js = json.loads(req.text)
+        query_url = solr_url.format(query=query.format(activity_id=activity_id,pivot=_pivot))
+        with urllib.request.urlopen(query_url) as url:
+            js = json.loads(url.read().decode('UTF-8'))
 
         facets = js['facet_counts']['facet_pivot'][_pivot]
         facet_dict = {'field':'activity_id','value':activity_id,'pivot':facets}
@@ -71,9 +77,9 @@ def get_input4mips_stats():
         query = 'rows=0&fq=activity_id:{activity_id}' \
                 '&facet.pivot={pivot}'                              
 
-        query_url = solr_url.format(query=query.format(activity_id=activity_id,pivot=_pivot))                                
-        req = requests.get(query_url) 
-        js = json.loads(req.text)
+        query_url = solr_url.format(query=query.format(activity_id=activity_id,pivot=_pivot))
+        with urllib.request.urlopen(query_url) as url:
+            js = json.loads(url.read().decode('UTF-8'))
 
         facets = js['facet_counts']['facet_pivot'][_pivot]
         facet_dict = {'field':'activity_id','value':activity_id,'pivot':facets}
@@ -109,7 +115,7 @@ def get_input4mips_stats():
                 for src_id,v4 in v3.items():
                     did = '.'.join([activity_id, mip_era, target_mip, inst_id, src_id])
                     if did in id_status:
-                        doi_dict = get_doi(activity_id, mip_era, target_mip, inst_id, src_id)
+                        doi_dict = get_doi(activity_id, mip_era, target_mip, inst_id, src_id, cafile)
                         doi = doi_dict['id']
                         title = doi_dict['title']
                         target_mip_list = v4['target_mip_list']
@@ -129,5 +135,24 @@ def get_input4mips_stats():
     with open('input4MIPs_report.json', 'w') as outfile:
         json.dump(dict(data=data_dict), outfile, indent=4)
 
+    filepath = os.path.join(output_dir, 'input4MIPs_report.json')
+    with open(filepath, 'w') as outfile:
+        json.dump(dict(data=data_dict), outfile, indent=4)
+
+
+def main():
+
+	parser = argparse.ArgumentParser(description="Create a JSON table for the report of input4MIPs in ESGF")
+	parser.add_argument("--output", "-o", dest="output", type=str, default=os.path.curdir, help="Output directory (default is current directory)")
+	parser.add_argument("--cafile", dest="cafile", type=str, default=None, help="File path of a CA certificates file for HTTPS requests")
+	args = parser.parse_args()
+
+	if not os.path.isdir(args.output):
+		print("{} is not a directory. Exiting.".format(args.output))
+		return
+	
+	get_input4mips_stats(args.output, args.cafile)
+
+
 if __name__ == '__main__':
-    get_input4mips_stats()
+	main()
