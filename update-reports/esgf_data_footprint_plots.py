@@ -20,12 +20,12 @@ def get_solr_query_url():
 
     solr_url = 'https://esgf-node.llnl.gov/solr/files/query' \
                '?q=*:*&wt=json' \
-               '&fq=replica:false&fq=latest:true&shards={shards}&{{query}}'
+               '&shards={shards}&{{query}}'
     
     return solr_url.format(shards=shards)
 
 
-def get_data_footprint_time_data(project, start_date, end_date, activity_id=None, experiment_id=None, cumulative=False):
+def get_data_footprint_time_data(project, start_date, end_date, activity_id=None, experiment_id=None, cumulative=False, latest=None, replica=None):
 
 	date_format = '%Y-%m-%dT%H:%M:%SZ'
 	start_str = start_date.strftime(date_format)
@@ -44,11 +44,17 @@ def get_data_footprint_time_data(project, start_date, end_date, activity_id=None
 		query += '&fq=activity_id:{activity_id}'
 	if experiment_id:
 		query += '&fq=experiment_id:{experiment_id}'
+	if latest is not None:
+		query += '&fq=latest:{latest}'
+	if replica is not None:
+		query += '&fq=replica:{replica}'
 	query_url = solr_url.format(query=query.format(project=project, 
 												   start_date=start_str, 
 												   end_date=end_str, 
 												   activity_id=activity_id, 
-												   experiment_id=experiment_id))
+												   experiment_id=experiment_id,
+												   latest=latest,
+												   replica=replica))
 
 	req = requests.get(query_url)
 	js = json.loads(req.text)
@@ -73,7 +79,7 @@ def get_data_footprint_time_data(project, start_date, end_date, activity_id=None
 	return (datetimes, data_footprint)
 
 
-def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=None, experiment_id=None, cumulative=False, output_dir=None):
+def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=None, experiment_id=None, cumulative=False, latest=None, replica=None, output_dir=None):
 
 	start_str = start_date.strftime("%Y%m%d")
 	end_str = end_date.strftime("%Y%m%d")
@@ -85,7 +91,9 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 											  		 		 end_date=end_date, 
 															 activity_id=activity_id, 
 															 experiment_id=experiment_id, 
-															 cumulative=cumulative)
+															 cumulative=cumulative,
+															 latest=latest,
+															 replica=replica)
 
 	if cumulative:
 		filename = "esgf_datasets_publication_cumulative_data_footprint_{}".format(project)
@@ -116,7 +124,7 @@ def gen_plot(project, start_date, end_date, ymin=None, ymax=None, activity_id=No
 	fig, ax = plt.subplots(figsize=(10,5))
 
 	# convert footprint to terabytes
-	data_footprint = [df/(2**40) for df in data_footprint]
+	data_footprint = [df/(10**12) for df in data_footprint]
 
 	@ticker.FuncFormatter
 	def major_formatter(x, pos):
@@ -157,7 +165,11 @@ def main():
 	parser.add_argument("--ymax", dest="ymax", type=int, default=None, help="Maximum of y-axis for data footprint plot (default is None)")
 	parser.add_argument("--ymin", dest="ymin", type=int, default=None, help="Minimum of y-axis for data footprint plot (default is None)")
 	parser.add_argument("--cumulative", dest="cumulative", action='store_true', help="Get cumulative data footprint of datasets over time (default is False)")
-	parser.set_defaults(cumulative=False)
+	parser.add_argument("--latest", dest="latest", action='store_true', help="Find the latest datasets")
+	parser.add_argument("--deprecated", dest="latest", action='store_false', help="Find the deprecated datasets")
+	parser.add_argument("--replica", dest="replica", action='store_true', help="Find datasets that are replicas")
+	parser.add_argument("--distinct", dest="replica", action='store_false', help="Find datasets that are distinct")
+	parser.set_defaults(cumulative=False,latest=None,replica=None)
 	args = parser.parse_args()
 
 	if args.start_date is None:
@@ -184,7 +196,7 @@ def main():
 		print("{} is not a directory. Exiting.".format(args.output))
 		return
 	
-	gen_plot(args.project, start_date, end_date, args.ymin, args.ymax, args.activity_id, args.experiment_id, args.cumulative, args.output)
+	gen_plot(args.project, start_date, end_date, args.ymin, args.ymax, args.activity_id, args.experiment_id, args.cumulative, args.latest, args.replica, args.output)
 
 
 if __name__ == '__main__':
