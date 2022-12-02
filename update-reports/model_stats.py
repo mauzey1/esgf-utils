@@ -53,7 +53,7 @@ def main():
 	
 	path = os.path.join(args.output, args.project+'_model_stats.json')
 	with open(path, 'w') as outfile:
-		json.dump(js, outfile)
+		json.dump(js, outfile, indent=4)
 
 
 if __name__ == '__main__':
