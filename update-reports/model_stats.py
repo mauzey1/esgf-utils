@@ -26,7 +26,6 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 	query = 'rows=0&fq=project:{project}' \
 			'&facet.field={facet1}&facet.field={facet2}' \
 			'&facet.field={facet3}&facet.field={facet4}' \
-			'&stats=true&stats.field={{!tag=piv max=true}}_timestamp' \
 			'&facet.pivot={{!stats=piv}}{facet1},{facet2},{facet3},{facet4}'
 	query_url = solr_url.format(query=query.format(project=project, 
 												   facet1=facet1, 
