@@ -35,7 +35,19 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 	req = requests.get(query_url)
 	js = json.loads(req.text)
 
-	return js
+	pivot_key = js['facet_counts']['facet_pivot'].keys()[0]
+	start_pivot = js['facet_counts']['facet_pivot'][pivot_key]
+
+	def __pivot(piv):
+		pd = {}
+		for p in piv:
+			if "pivot" in p:
+				pd[p["value"]] = __pivot(p["pivot"])
+			else:
+				pd[p["value"]] = p["count"]
+		return pd
+
+	return __pivot(start_pivot)
 
 
 def main():
