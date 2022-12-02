@@ -52,7 +52,7 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 
 def main():
 
-	parser = argparse.ArgumentParser(description="Create HTML tables for the data holdings of ESGF")
+	parser = argparse.ArgumentParser(description="Generate dataset statistics for a project in ESGF")
 	parser.add_argument("--project", "-p", dest="project", type=str, default="CMIP6", help="MIP project name (default is CMIP6)")
 	parser.add_argument("--output", "-o", dest="output", type=str, default=os.path.curdir, help="Output directory (default is current directory)")
 	args = parser.parse_args()
