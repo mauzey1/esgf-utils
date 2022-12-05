@@ -49,6 +49,36 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 
     return __pivot(start_pivot)
 
+# Count the number of entries at the innermost level of the nested dictionary 
+# (i.e., sum of all models listed under all table/variable/experiment entries).
+def count_models_per_exp(dataset_counts):
+
+    model_counts = {}
+    for table_id, variables in dataset_counts.items():
+        for var_id, experiments in variables.items():
+            for exp_id, models in experiments.items():
+                model_counts[table_id][var_id][exp_id] = len(models)
+
+    return model_counts
+
+
+# Count the number of entries at the 2nd level of the nested dictionary 
+# that host at least 1 experiment with 5 or more models contributing.  
+# (i.e., how many of the ~2000 table/variable entries indicate that for at least 1 experiment, 
+# at least 5 models were able/willing to provide the requested output?)
+def count_vars_with_5modelexps(dataset_counts):
+
+    variable_counts = {}
+    for table_id, variables in dataset_counts.items():
+        var_count = 0
+        for var_id, experiments in variables.items():
+            if len(experiments) >= 5:
+                var_count += 1
+        if var_count > 0:
+            variable_counts[table_id] = var_count
+
+    return variable_counts
+
 
 def main():
 
@@ -61,11 +91,18 @@ def main():
         print("{} is not a directory. Exiting.".format(args.output))
         return
 
-    js = get_stats(args.project, "table_id", "variable_id", "experiment_id", "source_id")
-   
+    dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "source_id")
+    model_counts = count_models_per_exp(dataset_counts)
+    variable_counts = count_vars_with_5modelexps(dataset_counts)
+
+    stats_dict = { "number of datasets per table-variable-experiment-model": dataset_counts,
+                   "number of models per table-variable-experiment": model_counts,
+                   "number of variables per table with at least 1 experiment with =>5 models": variable_counts
+                 }
+
     path = os.path.join(args.output, args.project+'_model_stats.json')
     with open(path, 'w') as outfile:
-        json.dump(js, outfile, indent=4)
+        json.dump(stats_dict, outfile, indent=4)
 
 
 if __name__ == '__main__':
