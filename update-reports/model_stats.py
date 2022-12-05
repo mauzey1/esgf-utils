@@ -53,13 +53,17 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 # (i.e., sum of all models listed under all table/variable/experiment entries).
 def count_models_per_exp(dataset_counts):
 
-    model_counts = {}
+    table_dict = {}
     for table_id, variables in dataset_counts.items():
+        var_dict = {}
         for var_id, experiments in variables.items():
+            model_counts = {}
             for exp_id, models in experiments.items():
-                model_counts[table_id][var_id][exp_id] = len(models)
+                model_counts[exp_id] = len(models)
+            var_dict[var_id] = model_counts
+        table_dict[table_id] = var_dict
 
-    return model_counts
+    return table_dict
 
 
 # Count the number of entries at the 2nd level of the nested dictionary 
