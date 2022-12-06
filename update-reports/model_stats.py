@@ -53,7 +53,6 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 # Count the number of entries at the innermost level of the nested dictionary 
 # (i.e., sum of all models listed under all table/variable/experiment entries).
 def count_models_per_exp(dataset_counts):
-
     table_dict = {}
     for table_id, variables in dataset_counts.iteritems():
         var_dict = {}
@@ -72,7 +71,6 @@ def count_models_per_exp(dataset_counts):
 # (i.e., how many of the ~2000 table/variable entries indicate that for at least 1 experiment, 
 # at least 5 models were able/willing to provide the requested output?)
 def count_vars_with_5modelexps(dataset_counts):
-
     variable_counts = {}
     for table_id, variables in dataset_counts.iteritems():
         var_count = 0
@@ -88,10 +86,27 @@ def count_vars_with_5modelexps(dataset_counts):
 
     return variable_counts
 
+
+# how many variables would fail to meet a threshold of 3 models
+def count_vars_with_lessthan3models(dataset_counts):
+    variable_counts = {}
+    for table_id, variables in dataset_counts.iteritems():
+        var_count = 0
+        for var_id, experiments in variables.iteritems():
+            unique_models = set()
+            for exp_id, models in experiments.iteritems():
+                unique_models.add(list(models.keys()))
+            if len(unique_models) < 3:
+                var_count += 1
+        if var_count > 0:
+            variable_counts[table_id] = var_count
+
+    return variable_counts
+
+
 # how many variables were never reported 
 # (even by a single model for a single experiment)
 def count_vars_not_reported(dataset_counts, project_tables):
-
     variable_counts = {}
     for table_id, variables in dataset_counts.iteritems():
         project_vars = project_tables[table_id]['variable_entry'].keys()
@@ -122,10 +137,12 @@ def main():
     dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "source_id")
     model_counts = count_models_per_exp(dataset_counts)
     variable_counts = count_vars_with_5modelexps(dataset_counts)
+    vars_with_lessthan3models_counts = count_vars_with_lessthan3models(dataset_counts)
 
     stats_dict = { "number of datasets per table-variable-experiment-model": dataset_counts,
                    "number of models per table-variable-experiment": model_counts,
-                   "number of variables per table with at least 1 experiment with =>5 models": variable_counts
+                   "number of variables per table with at least 1 experiment with =>5 models": variable_counts,
+                   "number of variables per table with less than 3 models": vars_with_lessthan3models_counts
                  }
 
     if args.count_missing_vars:
