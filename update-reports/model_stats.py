@@ -54,11 +54,11 @@ def get_stats(project, facet1, facet2, facet3, facet4):
 def count_models_per_exp(dataset_counts):
 
     table_dict = {}
-    for table_id, variables in dataset_counts.items():
+    for table_id, variables in dataset_counts.iteritems():
         var_dict = {}
-        for var_id, experiments in variables.items():
+        for var_id, experiments in variables.iteritems():
             model_counts = {}
-            for exp_id, models in experiments.items():
+            for exp_id, models in experiments.iteritems():
                 model_counts[exp_id] = len(models)
             var_dict[var_id] = model_counts
         table_dict[table_id] = var_dict
@@ -73,10 +73,14 @@ def count_models_per_exp(dataset_counts):
 def count_vars_with_5modelexps(dataset_counts):
 
     variable_counts = {}
-    for table_id, variables in dataset_counts.items():
+    for table_id, variables in dataset_counts.iteritems():
         var_count = 0
-        for var_id, experiments in variables.items():
-            if len(experiments) >= 5:
+        for var_id, experiments in variables.iteritems():
+            exp_has_5_models = False
+            for exp_id, models in experiments.iteritems():
+                if len(models) >= 5:
+                    exp_has_5_models = True
+            if exp_has_5_models:
                 var_count += 1
         if var_count > 0:
             variable_counts[table_id] = var_count
