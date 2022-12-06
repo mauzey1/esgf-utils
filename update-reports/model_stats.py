@@ -95,7 +95,7 @@ def count_vars_with_lessthan3models(dataset_counts):
         for var_id, experiments in variables.iteritems():
             unique_models = set()
             for exp_id, models in experiments.iteritems():
-                unique_models.add(list(models.keys()))
+                unique_models.update(list(models.keys()))
             if len(unique_models) < 3:
                 var_count += 1
         if var_count > 0:
