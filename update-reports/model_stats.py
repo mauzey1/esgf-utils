@@ -2,6 +2,7 @@ from __future__ import print_function
 import requests
 import os
 import json
+import glob
 import argparse
 
 
@@ -87,16 +88,35 @@ def count_vars_with_5modelexps(dataset_counts):
 
     return variable_counts
 
+# how many variables were never reported 
+# (even by a single model for a single experiment)
+def count_vars_not_reported(dataset_counts, project_tables):
+
+    variable_counts = {}
+    for table_id, variables in dataset_counts.iteritems():
+        project_vars = project_tables[table_id]['variable_entry'].keys()
+        var_count = sum([1 if x not in variables else 0 for x in project_vars])
+        if var_count > 0:
+            variable_counts[table_id] = var_count
+
+    return variable_counts
+
 
 def main():
 
     parser = argparse.ArgumentParser(description="Generate dataset statistics for a project in ESGF")
     parser.add_argument("--project", "-p", dest="project", type=str, default="CMIP6", help="MIP project name (default is CMIP6)")
+    parser.add_argument("--count-missing-vars", dest="count_missing_vars", action='store_true', help="Count variables in table not found in index")
     parser.add_argument("--output", "-o", dest="output", type=str, default=os.path.curdir, help="Output directory (default is current directory)")
+    parser.add_argument("--tables", "-t", dest="cmor_tables", type=str, default="Tables", help="CMOR tables directory (default is \"Tables\")")
     args = parser.parse_args()
 
     if not os.path.isdir(args.output):
         print("{} is not a directory. Exiting.".format(args.output))
+        return
+
+    if args.count_missing_vars and not os.path.isdir(args.cmor_tables):
+        print("{} is not a directory. Exiting.".format(args.cmor_tables))
         return
 
     dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "source_id")
@@ -107,6 +127,20 @@ def main():
                    "number of models per table-variable-experiment": model_counts,
                    "number of variables per table with at least 1 experiment with =>5 models": variable_counts
                  }
+
+    if args.count_missing_vars:
+        table_paths = glob.glob(os.path.join(args.cmor_tables, args.project+"_*.json"))
+        
+        project_tables = {}
+        for path in table_paths:
+            table_name = os.path.basename(path).replace("CMIP6_","").replace(".json","") 
+            with open(path) as f:
+                data = json.load(f)
+                project_tables[table_name] = data
+        
+        vars_not_reported_counts = count_vars_not_reported(dataset_counts, project_tables)
+
+        stats_dict["number of variables per table not reported"] = vars_not_reported_counts
 
     path = os.path.join(args.output, args.project+'_model_stats.json')
     with open(path, 'w') as outfile:
