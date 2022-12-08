@@ -123,6 +123,20 @@ def count_vars_not_reported(dataset_counts, project_tables):
     return variable_counts
 
 
+def count_models_per_table_var(dataset_counts):
+    models_per_table_var_counts = {}
+    for table_id, variables in dataset_counts.iteritems():
+        model_counts = {}
+        for var_id, experiments in variables.iteritems():
+            unique_models = set()
+            for exp_id, models in experiments.iteritems():
+                unique_models.update(list(models.keys()))
+            model_counts[var_id] = len(unique_models)
+        models_per_table_var_counts[table_id] = model_counts
+
+    return models_per_table_var_counts
+
+
 def main():
 
     parser = argparse.ArgumentParser(description="Generate dataset statistics for a project in ESGF")
@@ -142,11 +156,13 @@ def main():
 
     dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "source_id")
     model_counts = count_models_per_exp(dataset_counts)
+    models_per_table_var_counts = count_models_per_table_var(dataset_counts)
     variable_counts = count_vars_with_5modelexps(dataset_counts)
     vars_with_lessthan3models_counts = count_vars_with_lessthan3models(dataset_counts)
 
     stats_dict = { "number of datasets per table-variable-experiment-model": dataset_counts,
                    "number of models per table-variable-experiment": model_counts,
+                   "number of models per table-variable": models_per_table_var_counts,
                    "number of variables per table with at least 1 experiment with =>5 models": variable_counts,
                    "number of variables per table with less than 3 models": vars_with_lessthan3models_counts
                  }
