@@ -108,9 +108,14 @@ def count_vars_with_lessthan3models(dataset_counts):
 # (even by a single model for a single experiment)
 def count_vars_not_reported(dataset_counts, project_tables):
     variable_counts = {}
-    for table_id, variables in dataset_counts.iteritems():
-        project_vars = project_tables[table_id]['variable_entry'].keys()
-        var_count = sum([1 if x not in variables else 0 for x in project_vars])
+    for table_id, table_data in project_tables.iteritems():
+        if table_id in dataset_counts:
+            table_vars = table_data['variable_entry'].keys()
+            var_ids = dataset_counts[table_id].keys()
+            var_count = sum([1 if x not in var_ids else 0 for x in table_vars])
+        else:
+            var_count = len(table_vars)
+
         if var_count > 0:
             variable_counts[table_id] = var_count
 
@@ -151,9 +156,10 @@ def main():
         project_tables = {}
         for path in table_paths:
             table_name = os.path.basename(path).replace("CMIP6_","").replace(".json","") 
-            with open(path) as f:
-                data = json.load(f)
-                project_tables[table_name] = data
+            if table_name not in ["CV", "grids", "formula_terms", "coordinate", "input_example"]:
+                with open(path) as f:
+                    data = json.load(f)
+                    project_tables[table_name] = data
         
         vars_not_reported_counts = count_vars_not_reported(dataset_counts, project_tables)
 
