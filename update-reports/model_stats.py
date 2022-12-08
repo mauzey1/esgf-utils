@@ -109,8 +109,9 @@ def count_vars_with_lessthan3models(dataset_counts):
 def count_vars_not_reported(dataset_counts, project_tables):
     variable_counts = {}
     for table_id, table_data in project_tables.iteritems():
+        table_vars = table_data['variable_entry'].keys()
+
         if table_id in dataset_counts:
-            table_vars = table_data['variable_entry'].keys()
             var_ids = dataset_counts[table_id].keys()
             var_count = sum([1 if x not in var_ids else 0 for x in table_vars])
         else:
