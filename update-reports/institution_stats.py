@@ -154,7 +154,7 @@ def main():
         print("{} is not a directory. Exiting.".format(args.cmor_tables))
         return
 
-    dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "institutions_id")
+    dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "institution_id")
     institution_counts = count_institutions_per_exp(dataset_counts)
     institutions_per_table_var_counts = count_institutions_per_table_var(dataset_counts)
     variable_counts = count_vars_with_5institutionexps(dataset_counts)
