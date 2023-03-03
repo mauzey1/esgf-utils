@@ -105,17 +105,19 @@ def count_vars_with_lessthan3institutions(dataset_counts):
 
 
 # how many variables were never reported 
-# (even by a single institution for a single experiment)
+# (even by a single model for a single experiment)
+# count should be for the variable out_names in the table, not the index name
 def count_vars_not_reported(dataset_counts, project_tables):
     variable_counts = {}
     for table_id, table_data in project_tables.iteritems():
-        table_vars = table_data['variable_entry'].keys()
+        # Get the unique variable out_names from the table
+        var_out_names = set([v['out_name'] for k, v in table_data['variable_entry'].items()])
 
         if table_id in dataset_counts:
             var_ids = dataset_counts[table_id].keys()
-            var_count = sum([1 if x not in var_ids else 0 for x in table_vars])
+            var_count = sum([1 if x not in var_ids else 0 for x in var_out_names])
         else:
-            var_count = len(table_vars)
+            var_count = len(var_out_names)
 
         if var_count > 0:
             variable_counts[table_id] = var_count
