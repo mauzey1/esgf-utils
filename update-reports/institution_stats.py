@@ -125,16 +125,37 @@ def count_vars_not_reported(dataset_counts, project_tables):
     return variable_counts
 
 
-def count_institutions_per_table_var(dataset_counts):
-    institutions_per_table_var_counts = {}
-    for table_id, variables in dataset_counts.iteritems():
-        institution_counts = {}
-        for var_id, experiments in variables.iteritems():
-            unique_institutions = set()
-            for exp_id, institutions in experiments.iteritems():
-                unique_institutions.update(list(institutions.keys()))
-            institution_counts[var_id] = len(unique_institutions)
-        institutions_per_table_var_counts[table_id] = institution_counts
+def count_institutions_per_table_var(dataset_counts, project_tables=None):
+
+    if project_tables:
+        institutions_per_table_var_counts = {}
+        for table_id, table_data in project_tables.iteritems():
+            # Get the unique variable out_names from the table
+            var_out_names = set([v['out_name'] for k, v in table_data['variable_entry'].items()])
+
+            institution_counts = {}
+            for var_id in var_out_names:
+                if table_id not in dataset_counts:
+                    institution_counts[var_id] = 0
+                elif var_id not in dataset_counts[table_id]:
+                    institution_counts[var_id] = 0
+                else:
+                    experiments = dataset_counts[table_id][var_id]
+                    unique_institutions = set()
+                    for exp_id, institutions in experiments.iteritems():
+                        unique_institutions.update(list(institutions.keys()))
+                    institution_counts[var_id] = len(unique_institutions)
+            institutions_per_table_var_counts[table_id] = institution_counts
+    else:
+        institutions_per_table_var_counts = {}
+        for table_id, variables in dataset_counts.iteritems():
+            institution_counts = {}
+            for var_id, experiments in variables.iteritems():
+                unique_institutions = set()
+                for exp_id, institutions in experiments.iteritems():
+                    unique_institutions.update(list(institutions.keys()))
+                institution_counts[var_id] = len(unique_institutions)
+            institutions_per_table_var_counts[table_id] = institution_counts
 
     return institutions_per_table_var_counts
 
@@ -156,9 +177,21 @@ def main():
         print("{} is not a directory. Exiting.".format(args.cmor_tables))
         return
 
+    project_tables = None
+    if args.count_missing_vars:
+        table_paths = glob.glob(os.path.join(args.cmor_tables, args.project+"_*.json"))
+        
+        project_tables = {}
+        for path in table_paths:
+            table_name = os.path.basename(path).replace("CMIP6_","").replace(".json","") 
+            if table_name not in ["CV", "grids", "formula_terms", "coordinate", "input_example"]:
+                with open(path) as f:
+                    data = json.load(f)
+                    project_tables[table_name] = data
+
     dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "institution_id")
     institution_counts = count_institutions_per_exp(dataset_counts)
-    institutions_per_table_var_counts = count_institutions_per_table_var(dataset_counts)
+    institutions_per_table_var_counts = count_institutions_per_table_var(dataset_counts, project_tables)
     variable_counts = count_vars_with_5institutionexps(dataset_counts)
     vars_with_lessthan3institutions_counts = count_vars_with_lessthan3institutions(dataset_counts)
 
@@ -170,18 +203,7 @@ def main():
                  }
 
     if args.count_missing_vars:
-        table_paths = glob.glob(os.path.join(args.cmor_tables, args.project+"_*.json"))
-        
-        project_tables = {}
-        for path in table_paths:
-            table_name = os.path.basename(path).replace("CMIP6_","").replace(".json","") 
-            if table_name not in ["CV", "grids", "formula_terms", "coordinate", "input_example"]:
-                with open(path) as f:
-                    data = json.load(f)
-                    project_tables[table_name] = data
-        
         vars_not_reported_counts = count_vars_not_reported(dataset_counts, project_tables)
-
         stats_dict["number of variables per table not reported"] = vars_not_reported_counts
 
     path = os.path.join(args.output, args.project+'_institution_stats.json')
