@@ -183,13 +183,17 @@ def main():
         
         project_tables = {}
         for path in table_paths:
-            table_name = os.path.basename(path).replace("CMIP6_","").replace(".json","") 
+            table_name = os.path.basename(path).replace(args.project+"_","").replace(".json","") 
             if table_name not in ["CV", "grids", "formula_terms", "coordinate", "input_example"]:
                 with open(path) as f:
                     data = json.load(f)
                     project_tables[table_name] = data
 
-    dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "institution_id")
+    if args.project == "CMIP5":
+        dataset_counts = get_stats(args.project, "cmor_table", "variable", "experiment", "institute")
+    else:
+        dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "institution_id")
+
     institution_counts = count_institutions_per_exp(dataset_counts)
     institutions_per_table_var_counts = count_institutions_per_table_var(dataset_counts, project_tables)
     variable_counts = count_vars_with_5institutionexps(dataset_counts)
