@@ -21,13 +21,19 @@ def get_solr_query_url():
     return solr_url.format(shards=shards)
 
 
-def get_stats(project, facet1, facet2, facet3, facet4):
+def get_stats(project, facet1, facet2, facet3, facet4, exlcude_unsolicited=False):
     solr_url = get_solr_query_url()
 
-    query = 'rows=0&fq=project:{project}' \
-            '&facet.field={facet1}&facet.field={facet2}' \
-            '&facet.field={facet3}&facet.field={facet4}' \
-            '&facet.pivot={{!stats=piv}}{facet1},{facet2},{facet3},{facet4}'
+    if exlcude_unsolicited:
+        query = 'rows=0&fq=project:{project}&fq=-product:unsolicited' \
+                '&facet.field={facet1}&facet.field={facet2}' \
+                '&facet.field={facet3}&facet.field={facet4}' \
+                '&facet.pivot={{!stats=piv}}{facet1},{facet2},{facet3},{facet4}'
+    else:
+        query = 'rows=0&fq=project:{project}' \
+                '&facet.field={facet1}&facet.field={facet2}' \
+                '&facet.field={facet3}&facet.field={facet4}' \
+                '&facet.pivot={{!stats=piv}}{facet1},{facet2},{facet3},{facet4}'
     query_url = solr_url.format(query=query.format(project=project, 
                                                    facet1=facet1, 
                                                    facet2=facet2, 
@@ -190,7 +196,7 @@ def main():
                     project_tables[table_name] = data
 
     if args.project == "CMIP5":
-        dataset_counts = get_stats(args.project, "cmor_table", "variable", "experiment", "institute")
+        dataset_counts = get_stats(args.project, "cmor_table", "variable", "experiment", "institute", exlcude_unsolicited=True)
     else:
         dataset_counts = get_stats(args.project, "table_id", "variable_id", "experiment_id", "institution_id")
 
