@@ -1,6 +1,7 @@
 from __future__ import print_function
 import requests
 import os
+import csv
 import json
 import glob
 import argparse
@@ -179,21 +180,37 @@ def main():
         print("{} is not a directory. Exiting.".format(args.output))
         return
 
-    if args.count_missing_vars and not os.path.isdir(args.cmor_tables):
+    if args.count_missing_vars and args.project == 'CMIP5' and not os.path.isfile(args.cmor_tables):
+        print("{} is not a file. Exiting.".format(args.cmor_tables))
+    elif args.count_missing_vars and not os.path.isdir(args.cmor_tables):
         print("{} is not a directory. Exiting.".format(args.cmor_tables))
         return
 
     project_tables = None
     if args.count_missing_vars:
-        table_paths = glob.glob(os.path.join(args.cmor_tables, args.project+"_*.json"))
-        
-        project_tables = {}
-        for path in table_paths:
-            table_name = os.path.basename(path).replace(args.project+"_","").replace(".json","") 
-            if table_name not in ["CV", "grids", "formula_terms", "coordinate", "input_example"]:
-                with open(path) as f:
-                    data = json.load(f)
-                    project_tables[table_name] = data
+        if args.project == 'CMIP5':
+            with open(args.cmor_tables, 'r') as csv_file:
+                reader = csv.reader(csv_file)
+                next(reader)
+                table_names = next(reader)[1:]
+                next(reader)
+                project_tables = { t:{'variable_entry':{}} for t in table_names }
+                for row in reader:
+                    if row[0] == '# of variables in table':
+                        break
+                    for idx, col in enumerate(row[1:]):
+                        if col:
+                            project_tables[table_names[idx]]['variable_entry'][col] = {'out_name':col}
+        else:
+            table_paths = glob.glob(os.path.join(args.cmor_tables, args.project+"_*.json"))
+            
+            project_tables = {}
+            for path in table_paths:
+                table_name = os.path.basename(path).replace(args.project+"_","").replace(".json","") 
+                if table_name not in ["CV", "grids", "formula_terms", "coordinate", "input_example"]:
+                    with open(path) as f:
+                        data = json.load(f)
+                        project_tables[table_name] = data
 
     if args.project == "CMIP5":
         dataset_counts = get_stats(args.project, "cmor_table", "variable", "experiment", "institute", exlcude_unsolicited=True)
