@@ -182,7 +182,8 @@ def main():
 
     if args.count_missing_vars and args.project == 'CMIP5' and not os.path.isfile(args.cmor_tables):
         print("{} is not a file. Exiting.".format(args.cmor_tables))
-    elif args.count_missing_vars and not os.path.isdir(args.cmor_tables):
+        return
+    elif args.count_missing_vars and args.project != 'CMIP5' and not os.path.isdir(args.cmor_tables):
         print("{} is not a directory. Exiting.".format(args.cmor_tables))
         return
 
