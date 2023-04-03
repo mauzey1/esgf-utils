@@ -193,7 +193,7 @@ def main():
             with open(args.cmor_tables, 'r') as csv_file:
                 reader = csv.reader(csv_file)
                 next(reader)
-                table_names = next(reader)[1:]
+                table_names = [ t.strip() for t in next(reader)[1:]]
                 next(reader)
                 project_tables = { t:{'variable_entry':{}} for t in table_names }
                 for row in reader:
