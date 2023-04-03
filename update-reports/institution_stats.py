@@ -200,8 +200,8 @@ def main():
                     if row[0] == '# of variables in table':
                         break
                     for idx, col in enumerate(row[1:]):
-                        if col:
-                            var_name = col.strip()
+                        var_name = col.strip()
+                        if var_name:
                             project_tables[table_names[idx]]['variable_entry'][var_name] = {'out_name':var_name}
         else:
             table_paths = glob.glob(os.path.join(args.cmor_tables, args.project+"_*.json"))
