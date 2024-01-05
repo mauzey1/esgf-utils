@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import requests
 import os
 import json
@@ -56,7 +56,7 @@ def get_latest_data_holdings(project, row_facet, col_facet, selected_columns=Non
 	total = 0
 
 	current_time = datetime.datetime.now()
-	pivot = js['facet_counts']['facet_pivot'].keys()[0]
+	pivot = list(js['facet_counts']['facet_pivot'].keys())[0]
 	result = {}
 	for row in js['facet_counts']['facet_pivot'][pivot]:
 		row_val = {}
@@ -94,7 +94,7 @@ def get_exp_sim_stats(project, row_facet, col_facet):
     rows = js['facet_counts']['facet_fields'][row_facet][::2]
     columns = js['facet_counts']['facet_fields'][col_facet][::2]
     
-    pivot = js['facet_counts']['facet_pivot'].keys()[0]
+    pivot = list(js['facet_counts']['facet_pivot'].keys())[0]
     result = {}
     for row in js['facet_counts']['facet_pivot'][pivot]:
         row_val = {}
@@ -141,7 +141,7 @@ def get_facet_value_count(project, row_facet, col_facet, count_facet, selected_c
 	else:
 		columns = selected_columns
 
-	pivot = js['facet_counts']['facet_pivot'].keys()[0]
+	pivot = list(js['facet_counts']['facet_pivot'].keys())[0]
 	result = {}
 	for row in js['facet_counts']['facet_pivot'][pivot]:
 		row_val = {}
