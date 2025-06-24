@@ -9,12 +9,24 @@ import jinja2
 
 
 def get_solr_query_url():
-    search_url = 'https://esgf-node.llnl.gov/esg-search/search/' \
-                 '?limit=0&format=application%2Fsolr%2Bjson'
+    # search_url = 'https://esgf-node.llnl.gov/esg-search/search/' \
+    #              '?limit=0&format=application%2Fsolr%2Bjson'
 
-    req = requests.get(search_url)
-    js = json.loads(req.text)
-    shards = js['responseHeader']['params']['shards']
+    # req = requests.get(search_url)
+    # js = json.loads(req.text)
+    # shards = js['responseHeader']['params']['shards']
+
+    shards = ",".join(
+        [
+            "localhost:8983/solr/files",
+            "localhost:8985/solr/files",
+            "localhost:8987/solr/files",
+            "localhost:8988/solr/files",
+            "localhost:8990/solr/files",
+            "localhost:8993/solr/files",
+            "localhost:8995/solr/files"
+        ]
+    )
 
     solr_url = 'https://esgf-node.llnl.gov/solr/datasets/select' \
                '?q=*:*&wt=json&facet=true&fq=type:Dataset' \
