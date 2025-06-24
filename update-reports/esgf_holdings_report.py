@@ -4,7 +4,6 @@ import os
 import json
 import datetime
 import argparse
-import collections
 import jinja2
 
 
@@ -18,13 +17,13 @@ def get_solr_query_url():
 
     shards = ",".join(
         [
-            "localhost:8983/solr/files",
-            "localhost:8985/solr/files",
-            "localhost:8987/solr/files",
-            "localhost:8988/solr/files",
-            "localhost:8990/solr/files",
-            "localhost:8993/solr/files",
-            "localhost:8995/solr/files"
+            "localhost:8983/solr/datasets",
+            "localhost:8985/solr/datasets",
+            "localhost:8987/solr/datasets",
+            "localhost:8988/solr/datasets",
+            "localhost:8990/solr/datasets",
+            "localhost:8993/solr/datasets",
+            "localhost:8995/solr/datasets"
         ]
     )
 
